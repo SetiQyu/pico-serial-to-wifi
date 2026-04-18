@@ -1,8 +1,5 @@
 #include "hardware/uart.h"
 
-constexpr int kPicoTx = 16;
-constexpr int kPicoRx = 17;
-constexpr int kBaudRate = 115200;
 uart_inst_t *uart_id = uart0;
 #define CRLF(s) s "\r\n"
 

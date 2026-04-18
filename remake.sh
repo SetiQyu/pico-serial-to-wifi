@@ -1,1 +1,1 @@
-cmake -S . -B build -DPICO_BOARD=pico2_w -DCMAKE_BUILD_TYPE=Debug -DPICO_DEOPTIMIZED_DEBUG=1
+cmake -S . -B build -DPICO_BOARD=pico2_w

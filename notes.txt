@@ -1,2 +1,0 @@
-https://www.raspberrypi.com/documentation/pico-sdk/high_level.html#group_pico_multicore
-get does not seem to return something that can be used to send by serverPoll

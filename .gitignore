@@ -1,1 +1,3 @@
 build/
+uart.sh
+remakeDebug.sh

@@ -12,18 +12,22 @@
 
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
-constexpr int kTcpPort = 4242;
-constexpr int kBufSize = 2048;
-constexpr int kTestIterations = 10;
-constexpr int kPollTime = 1;
 
-#define TESTING 1
+#include "config.hpp"
+
+#define PANIC(msg) panic(msg)
 
 #ifdef TESTING
 #define DEBUG_printf(...) printf(__VA_ARGS__)
 #else
 #define DEBUG_printf(...) ((void)0)
 #endif
+
+// #ifdef LED
+// #undef PANIC
+// #include "led.hpp"
+// #define PANIC(msg) do { led().ledSet(true); panic(msg); } while(0)
+// #endif 
 
 typedef struct TCP_SERVER_T_ {
     struct tcp_pcb *server_pcb;
@@ -36,15 +40,21 @@ typedef struct TCP_SERVER_T_ {
     int run_count;
 } TCP_SERVER_T;
 
-// The class here has a lot of awkward code because lwip forces one into
-// specific type signatures in the functions it wants
+// The class here has a lot of awkward code because of having to work with lwip
 
 class Tcp {
   private:
     inline static int tcpPort = kTcpPort;
     inline static LogBuf *log;
-    void *arg;
-
+    inline static void *arg;
+    
+    #ifdef LED
+    static Led& led() {
+        static Led l(kLedOut, kBlinkRate);
+        return l;
+    }
+    #endif
+    
     static inline TCP_SERVER_T* stateFromArg(void *arg) {
         return static_cast<TCP_SERVER_T*>(arg);
     }
@@ -189,7 +199,6 @@ class Tcp {
         tcp_accept(state->server_pcb, tcpAccept);
 
         return true;
-
     }
 
     static err_t serverClose(void* arg) {
@@ -251,24 +260,26 @@ class Tcp {
 
         return ERR_OK;
     }
+
   public:
     Tcp(LogBuf* l) {
 
         log = l;
+        // TODO: Pass in uart instance properly instead
         #ifdef TESTING    
         stdio_init_all();
         #endif
 
         if(cyw43_arch_init()) {
             DEBUG_printf("Error: cyw43_arch_init failed\n");
-            panic("Stopped exec\n");
+            PANIC("Stopped exec\n");
         }
 
         cyw43_arch_enable_sta_mode();
-        int res = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000);
+        int res = cyw43_arch_wifi_connect_timeout_ms(kWifiSsid, kWifiPword, CYW43_AUTH_WPA2_AES_PSK, 30000);
         if (res) {
             DEBUG_printf("failed to connect to router %d\n", res);
-            panic("Stopped exec");
+            PANIC("Stopped exec");
         } else {
             DEBUG_printf("Connected\n");
         }
@@ -276,7 +287,7 @@ class Tcp {
         arg = calloc(1, sizeof(TCP_SERVER_T));
         if (!arg) {
             DEBUG_printf("failed to allocate state tcp\n");
-            panic("Stopped exec");
+            PANIC("Stopped exec");
         }
     }
 
@@ -291,6 +302,5 @@ class Tcp {
         if(!serverOpen(arg)) {
             DEBUG_printf("error: serverOpen failed\n");
         }
-        // We need this until client connects and enters tcpAccept loop
     }
 };
